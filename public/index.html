@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+
+    <!-- GLOBAL LOADING SPINNER -->
+    <div id="global-spinner" class="spinner-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="screen active">
+        <div class="login-box">
+            <h1>Admin Access</h1>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button id="login-btn" class="btn-primary">Login</button>
+            <p id="login-error" class="error"></p>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboard-screen" class="screen">
+        <nav class="sidebar">
+            <h2>Data Extractor</h2>
+            <div class="nav-links">
+                <button class="nav-btn active" onclick="app.navigate('upload')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Upload Data
+                </button>
+                <button class="nav-btn" onclick="app.navigate('sessions')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    Sessions
+                </button>
+                <button class="nav-btn" onclick="app.navigate('duplicates')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Duplicates
+                </button>
+            </div>
+            
+            <div class="sidebar-bottom">
+                <button id="theme-toggle" class="nav-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    Dark Mode
+                </button>
+                <button onclick="app.logout()" class="nav-btn logout-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Logout
+                </button>
+            </div>
+        </nav>
+
+        <main class="content">
+            <!-- UPLOAD VIEW -->
+            <div id="view-upload" class="view active">
+                <h1>Upload Screenshots</h1>
+                <p class="subtitle">Upload single images, multiple images, or an entire folder.</p>
+                
+                <div class="upload-options">
+                    <label for="file-upload" class="upload-btn">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                        <span>Upload Images</span>
+                        <small>Select one or multiple files</small>
+                    </label>
+                    <input type="file" id="file-upload" accept="image/*" multiple hidden>
+                    
+                    <label for="folder-upload" class="upload-btn">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        <span>Upload Folder</span>
+                        <small>Select an entire directory</small>
+                    </label>
+                    <input type="file" id="folder-upload" webkitdirectory directory multiple hidden>
+                </div>
+                
+                <div id="upload-progress" class="progress-container" style="display: none;">
+                    <div class="progress-header">
+                        <h3 id="progress-text">Processing...</h3>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bar"><div id="progress-fill"></div></div>
+                </div>
+            </div>
+
+            <!-- SESSIONS VIEW -->
+            <div id="view-sessions" class="view">
+                <h1>Sessions</h1>
+                <div id="sessions-list" class="history-grid"></div>
+            </div>
+
+            <!-- DUPLICATES VIEW -->
+            <div id="view-duplicates" class="view">
+                <h1>Duplicates</h1>
+                <div id="duplicates-list" class="history-grid"></div>
+            </div>
+
+            <!-- RESULTS VIEW -->
+            <div id="view-results" class="view">
+                <div class="view-header">
+                    <button class="btn-secondary" onclick="app.navigate('sessions')">← Back</button>
+                    <h1 id="results-title">Session Results</h1>
+                    <div class="filter-controls">
+                        <select id="sort-filter" onchange="app.applySort()">
+                            <option value="original">Original Order</option>
+                            <option value="oldest">Sort: Oldest to Youngest</option>
+                            <option value="youngest">Sort: Youngest to Oldest</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="results-grid" class="data-grid"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Confirmation Modal (Yes/No) -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="confirm-title">Confirmation</h2>
+            <p id="confirm-message">Are you sure?</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="confirm-no-btn">No, Cancel</button>
+                <button class="btn-primary" id="confirm-yes-btn">Yes, Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <h2>Delete Item?</h2>
+            <p>Are you sure you want to delete this? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="app.closeDeleteModal()">Cancel</button>
+                <button class="btn-danger" id="confirm-delete-btn">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Notification</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
